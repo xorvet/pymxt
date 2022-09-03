@@ -1,9 +1,7 @@
-from pytube import Search
 import vlc
 import pafy
 import threading
-import time
-import sys
+from pytube import Search
 
 commands = ["!pp","!ps","!st","!qq","!lsqq","!sk","!exit"]
 
@@ -22,10 +20,11 @@ def player(url):
 
 def main():
     media = []
+    event = threading.Event()
     def fnplay(timee):
         for i in media[::-1]:
             i.play()
-            time.sleep(timee+3)
+            event.wait(timee+2)
     while True:
         data = process_query(input(">> "))
         if data != None:
@@ -45,16 +44,19 @@ def main():
            elif data[1][0] == commands[3]:
                media_obj = Search(data[0]).results[0]
                print(f"Queued: {media_obj.title}\n{media_obj.watch_url}")
-               media.append(player(media_obj.watch_url)[0])
+               media.insert(0,player(media_obj.watch_url)[0])
            elif data[1][0] == commands[4]:
-               print("list")
+               print(media)
            elif data[1][0] == commands[5]:
-               media[0].stop()
-               media.remove(media[0])
+               media[-1].stop()
+               media.remove(media[-1])
                if len(media) > 0:
                    media[-1].play()
            elif data[1][0] == commands[6]:
-               media = []
+               if media != []:
+                   media[-1].stop()
+                   media = []
+               event.set()
                break
         else:
             print("Error")
